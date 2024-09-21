@@ -146,6 +146,41 @@ const Triangle = function () {
   const identityMat = mat4.create();
   let angle = 0;
 
+  const changeTriangleColor = function (newColors) {
+    colors = newColors;
+    gl.bindBuffer(gl.ARRAY_BUFFER, triangleColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  };
+
+  let clicks = 0;
+  const clickHandler = document.getElementById("main-button");
+  clickHandler.addEventListener("click", function () {
+    clicks++;
+    if (clicks % 2 === 0) {
+      changeTriangleColor([
+        0.3, 0.3, 1.0,
+        0.0, 1.0, 0.0,
+        0.0, 1.0, 1.0,
+        0.0, 1.0, 1.0,
+        1.0, 0.0, 1.0,
+        1.0, 0.0, 1.0,
+        0.0, 1.0, 0.0,
+        0.0, 1.0, 0.0
+      ]);
+    } else {
+      changeTriangleColor([
+        1.0, 0.3, 0.3,
+        1.0, 0.0, 1.0,
+        1.0, 1.0, 0.0,
+        1.0, 1.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        1.0, 0.0, 1.0,
+        1.0, 0.0, 1.0
+      ]);
+    }
+  });
+
   const loop = function () {
     angle = (performance.now() / 1000 / 60) * 23 * Math.PI;
     mat4.rotate(worldMatrix, identityMat, angle, [1, 1, -0.5]);
