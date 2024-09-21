@@ -37,6 +37,8 @@ const Triangle = function () {
 
   gl.clearColor(...canvasColor, 1.0); // R, G, B, A
   gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE);
 
   const vertexShader = gl.createShader(gl.VERTEX_SHADER);
   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -62,16 +64,37 @@ const Triangle = function () {
 
   gl.validateProgram(program);
 
-  let triangleVerts = [
+  let boxVerts = [
     // X, Y, Z
-    0.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    0.5, Math.sqrt(3) / 2.0, 0.0,
-    -0.5, Math.sqrt(3) / 2.0, 0.0,
-    -1.0, 0.0, 0.0,
-    -0.5, -Math.sqrt(3) / 2.0, 0.0,
-    0.5, -Math.sqrt(3) / 2.0, 0.0,
-    1.0, 0.0, 0.0
+    -1.0, 1.0, -1.0,    // 0
+    -1.0, 1.0, 1.0,     // 1
+    1.0, 1.0, 1.0,      // 2
+    1.0, 1.0, -1.0,     // 3
+    -1.0, -1.0, -1.0,   // 4
+    -1.0, -1.0, 1.0,    // 5
+    1.0, -1.0, 1.0,     // 6
+    1.0, -1.0, -1.0,    // 7 
+  ];
+
+  let boxIndices = [
+    // Top
+    0, 1, 2,
+    0, 2, 3,
+    // Left
+    5, 1, 4,
+    4, 1, 0,
+    // Right
+    2, 6, 7,
+    2, 7, 3,
+    // Front
+    6, 2, 5,
+    1, 5, 2,
+    // Back
+    3, 7, 4,
+    3, 4, 0,
+    // Bottom
+    5, 4, 6,
+    6, 4, 7
   ];
 
   let colors = [
@@ -86,11 +109,15 @@ const Triangle = function () {
     0.0, 1.0, 0.0
   ];
 
-  const triangleVertBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertBuffer);
+  const boxVertBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, boxVertBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVerts), gl.STATIC_DRAW);
+
+  const boxIndicesBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndicesBuffer);
   gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array(triangleVerts),
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(boxIndices),
     gl.STATIC_DRAW
   );
 
@@ -144,9 +171,8 @@ const Triangle = function () {
   gl.uniformMatrix4fv(projectionMatLoc, gl.FALSE, projectionMatrix);
 
   const identityMat = mat4.create();
-  let angle = 0;
 
-  const changeTriangleColor = function (newColors) {
+  const changeBoxColor = function (newColors) {
     colors = newColors;
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleColorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
@@ -157,7 +183,7 @@ const Triangle = function () {
   clickHandler.addEventListener("click", function () {
     clicks++;
     if (clicks % 2 === 0) {
-      changeTriangleColor([
+      changeBoxColor([
         0.3, 0.3, 1.0,
         0.0, 1.0, 0.0,
         0.0, 1.0, 1.0,
@@ -168,7 +194,7 @@ const Triangle = function () {
         0.0, 1.0, 0.0
       ]);
     } else {
-      changeTriangleColor([
+      changeBoxColor([
         1.0, 0.3, 0.3,
         1.0, 0.0, 1.0,
         1.0, 1.0, 0.0,
@@ -181,15 +207,47 @@ const Triangle = function () {
     }
   });
 
+  const bindNewBuffer = function (buffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, boxVertBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
+  };
+
+  const generateBox = function (
+    [x, y, z],
+    s,
+    speed = 23,
+    rotation = [1, 1, -0.5]
+  ) {
+      let newBoxVerts = [
+        -1.0, 1.0, -1.0,
+        -1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0,
+        1.0, 1.0, -1.0,
+        -1.0, -1.0, -1.0,
+        -1.0, -1.0, 1.0,
+        1.0, -1.0, 1.0,
+        1.0, -1.0, -1.0,
+      ];
+
+      let angle = (performance.now() / 1000 / 60) * speed * Math.PI;
+      newBoxVerts = newBoxVerts.map((v) => v * s);
+
+      mat4.translate(worldMatrix, identityMat, [x, y, z]);
+      mat4.rotate(worldMatrix, worldMatrix, angle, rotation);
+
+      bindNewBuffer(newBoxVerts);
+      gl.uniformMatrix4fv(worldMatLoc, gl.FALSE, worldMatrix);
+      gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
+    };
+
   const loop = function () {
-    angle = (performance.now() / 1000 / 60) * 23 * Math.PI;
-    mat4.rotate(worldMatrix, identityMat, angle, [1, 1, -0.5]);
-    gl.uniformMatrix4fv(worldMatLoc, gl.FALSE, worldMatrix);
-
     gl.clearColor(...canvasColor, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 8);
+    generateBox([2.5, 1.8, 0], 0.2, 70, [0, 1, 0]);
+    generateBox([0.5, 0, 0], 0.7);
+    generateBox([-2, -1.4, 0], 0.4, 90, [1, 0, 0]);
+
     requestAnimationFrame(loop);
   };
 
