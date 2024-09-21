@@ -64,22 +64,26 @@ const Triangle = function () {
 
   let triangleVerts = [
     // X, Y, Z
-    -0.5, 0.5, 0.0,
-    -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5, 0.5, 0.0,
-    -0.5, 0.5, 0.0
+    0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0,
+    0.5, Math.sqrt(3) / 2.0, 0.0,
+    -0.5, Math.sqrt(3) / 2.0, 0.0,
+    -1.0, 0.0, 0.0,
+    -0.5, -Math.sqrt(3) / 2.0, 0.0,
+    0.5, -Math.sqrt(3) / 2.0, 0.0,
+    1.0, 0.0, 0.0
   ];
 
   let colors = [
     // R, G, B
-    0.0, 0.0, 1.0,
+    0.3, 0.3, 1.0,
     0.0, 1.0, 0.0,
     0.0, 1.0, 1.0,
     0.0, 1.0, 1.0,
-    1.0, 0.0, 0.0,
-    0.0, 0.0, 1.0
+    1.0, 0.0, 1.0,
+    1.0, 0.0, 1.0,
+    0.0, 1.0, 0.0,
+    0.0, 1.0, 0.0
   ];
 
   const triangleVertBuffer = gl.createBuffer();
@@ -150,7 +154,7 @@ const Triangle = function () {
     gl.clearColor(...canvasColor, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 8);
     requestAnimationFrame(loop);
   };
 
