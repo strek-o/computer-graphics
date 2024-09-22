@@ -143,6 +143,20 @@ const Triangle = function (meshes) {
   const viewMatLoc = gl.getUniformLocation(program, "mView");
   const projectionMatLoc = gl.getUniformLocation(program, "mProjection");
 
+  let directions = {
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+  };
+
+  addEventListener("keydown", (event) => {
+    directions[event.key] = true;
+  });
+  addEventListener("keyup", (event) => {
+    directions[event.key] = false;
+  });
+
   const worldMatrix = mat4.create();
   const viewMatrix = mat4.create();
   mat4.lookAt(viewMatrix, [0, 0, -17], [0, 0, 0], [0, 1, 0]);
@@ -171,6 +185,8 @@ const Triangle = function (meshes) {
 
   const identityMat = mat4.create();
   let angle = 0;
+  const speed = 0.2;
+  let cameraLoc = [0, 0, -17];
 
   const loop = function () {
     angle = (performance.now() / 1000 / 60) * 25 * Math.PI;
@@ -182,6 +198,27 @@ const Triangle = function (meshes) {
 
     gl.bindTexture(gl.TEXTURE_2D, boxTexture);
     gl.activeTexture(gl.TEXTURE0);
+
+    if (directions.w) {
+      cameraLoc[2] -= speed;
+    }
+    if (directions.a) {
+      cameraLoc[0] -= speed;
+    }
+    if (directions.s) {
+      cameraLoc[2] += speed;
+    }
+    if (directions.d) {
+      cameraLoc[0] += speed;
+    }
+
+    mat4.lookAt(
+      viewMatrix,
+      cameraLoc,
+      [cameraLoc[0], cameraLoc[1], cameraLoc[2] + 17],
+      [0, 1, 0]
+    );
+    gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrix);
 
     gl.drawElements(
       gl.TRIANGLES,
