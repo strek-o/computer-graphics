@@ -7,11 +7,14 @@ const vertexShaderTxt = `
 
   attribute vec3 vertPosition;
   attribute vec2 textureCoord;
+  attribute vec3 vertNormal;
 
   varying vec2 fragTextureCoord;
+  varying vec3 fragNormal;
  
   void main() {
     fragTextureCoord = textureCoord;
+    fragNormal = (mWorld * vec4(vertNormal, 0.0)).xyz;
     gl_Position = mProjection * mView * mWorld * vec4(vertPosition, 1.0);
   }
 `;
@@ -20,11 +23,21 @@ const fragmentShaderTxt = `
   precision mediump float;
 
   varying vec2 fragTextureCoord;
+  varying vec3 fragNormal;
+
+  uniform vec3 ambient;
+  uniform vec3 lightDirection;
+  uniform vec3 lightColor;
 
   uniform sampler2D sampler;
 
   void main() {
-    gl_FragColor = texture2D(sampler, fragTextureCoord);
+    vec3 normFragNormal = normalize(fragNormal);
+    vec3 normLightDirection = normalize(lightDirection);
+    vec3 light = ambient + lightColor * max(dot(normFragNormal, normLightDirection), 0.0);
+
+    vec4 tex = texture2D(sampler, fragTextureCoord);
+    gl_FragColor = vec4(tex.rgb * light, tex.a);
   }
 `;
 
@@ -103,6 +116,18 @@ const Triangle = function (meshes) {
   );
   gl.enableVertexAttribArray(textureLocation);
 
+  gl.bindBuffer(gl.ARRAY_BUFFER, meshes.obj.normalBuffer);
+  const normalLocation = gl.getAttribLocation(program, "vertNormal");
+  gl.vertexAttribPointer(
+    normalLocation,
+    meshes.obj.normalBuffer.itemSize,
+    gl.FLOAT,
+    gl.TRUE,
+    0,
+    0
+  );
+  gl.enableVertexAttribArray(normalLocation);
+
   const img = document.getElementById("main-texture");
   const boxTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, boxTexture);
@@ -134,6 +159,15 @@ const Triangle = function (meshes) {
   gl.uniformMatrix4fv(worldMatLoc, gl.FALSE, worldMatrix);
   gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrix);
   gl.uniformMatrix4fv(projectionMatLoc, gl.FALSE, projectionMatrix);
+
+  let ambientLightLoc = gl.getUniformLocation(program, "ambient");
+  let lightDirectionLoc = gl.getUniformLocation(program, "lightDirection");
+  let lightColorLoc = gl.getUniformLocation(program, "lightColor");
+
+  let ambientColor = [0.6, 0.6, 0.6];
+  gl.uniform3f(ambientLightLoc, ...ambientColor);
+  gl.uniform3f(lightDirectionLoc, 1.5, 2.0, -1.0);
+  gl.uniform3f(lightColorLoc, 0.7, 0.7, 0.7);
 
   const identityMat = mat4.create();
   let angle = 0;
