@@ -4,10 +4,11 @@
     <meta charset="utf-8" />
     <title>WebGL</title>
   </head>
-  <body onload="Triangle();">
+  <body onload="Draw();">
     <canvas id="main-canvas" width="800" height="600"></canvas>
+    <img id="main-texture" src="texture.jpg" hidden />
+    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3/gl-matrix.js"></script>
+    <script src="webgl-obj-loader.js"></script>
+    <script src="script.js"></script>
   </body>
-  <img id="img" src="texture.jpg" hidden />
-  <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3/gl-matrix.js"></script>
-  <script src="script.js"></script>
 </html>

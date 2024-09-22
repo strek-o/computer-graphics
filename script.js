@@ -30,7 +30,16 @@ const fragmentShaderTxt = `
 
 const mat4 = glMatrix.mat4;
 
-const Triangle = function () {
+function Draw() {
+  OBJ.downloadMeshes(
+    {
+      obj: "object.obj"
+    },
+    Triangle
+  );
+}
+
+const Triangle = function (meshes) {
   const canvas = document.getElementById("main-canvas");
   const gl = canvas.getContext("webgl");
   let canvasColor = [0.976, 0.976, 0.976];
@@ -66,131 +75,35 @@ const Triangle = function () {
 
   gl.validateProgram(program);
 
-  let boxVerts = [
-    // X, Y, Z
-    -1.0, 1.0, -1.0,    // 0
-    -1.0, 1.0, 1.0,     // 1
-    1.0, 1.0, 1.0,      // 2
-    1.0, 1.0, -1.0,     // 3
-    -1.0, 1.0, 1.0,     // 4
-    -1.0, -1.0, 1.0,    // 5
-    -1.0, -1.0, -1.0,   // 6
-    -1.0, 1.0, -1.0,    // 7
-    1.0, 1.0, 1.0,      // 8
-    1.0, -1.0, 1.0,     // 9
-    1.0, -1.0, -1.0,    // 10
-    1.0, 1.0, -1.0,     // 11
-    1.0, 1.0, 1.0,      // 12
-    1.0, -1.0, 1.0,     // 13
-    -1.0, -1.0, 1.0,    // 14
-    -1.0, 1.0, 1.0,     // 15
-    1.0, 1.0, -1.0,     // 16
-    1.0, -1.0, -1.0,    // 17
-    -1.0, -1.0, -1.0,   // 18
-    -1.0, 1.0, -1.0,    // 19
-    -1.0, -1.0, -1.0,   // 20
-    -1.0, -1.0, 1.0,    // 21
-    1.0, -1.0, 1.0,     // 22
-    1.0, -1.0, -1.0     // 23
-  ];
-
-  let boxIndices = [
-    // Top
-    0, 1, 2,
-    0, 2, 3,
-    // Left
-    5, 4, 6,
-    6, 4, 7,
-    // Right
-    8, 9, 10,
-		8, 10, 11,
-    // Front
-    13, 12, 14,
-		15, 14, 12,
-    // Back
-    16, 17, 18,
-		16, 18, 19,
-    // Bottom
-    21, 20, 22,
-		22, 20, 23
-  ];
-
-  boxTextureCoords = [
-    // Top
-    0, 0,
-    0, 1,
-    1, 1,
-    1, 0,
-    // Left
-    0, 0,
-    1, 0,
-    1, 1,
-    0, 1,
-    // Right
-    1, 1,
-    0, 1,
-    0, 0,
-    1, 0,
-    // Front
-    1, 1,
-    1, 0,
-    0, 0,
-    0, 1,
-    // Back
-    0, 0,
-    0, 1,
-    1, 1,
-    1, 0,
-    // Bottom
-    1, 1,
-    1, 0,
-    0, 0,
-    0, 1
-  ];
-
-  const boxVertBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, boxVertBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVerts), gl.STATIC_DRAW);
-
-  const boxIndicesBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndicesBuffer);
-  gl.bufferData(
-    gl.ELEMENT_ARRAY_BUFFER,
-    new Uint16Array(boxIndices),
-    gl.STATIC_DRAW
-  );
+  OBJ.initMeshBuffers(gl, meshes.obj);
+  gl.bindBuffer(gl.ARRAY_BUFFER, meshes.obj.vertexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, meshes.obj.indexBuffer);
 
   const posAttribLocation = gl.getAttribLocation(program, "vertPosition");
   gl.vertexAttribPointer(
     posAttribLocation,
-    3,
+    meshes.obj.vertexBuffer.itemSize,
     gl.FLOAT,
     gl.FALSE,
-    3 * Float32Array.BYTES_PER_ELEMENT,
+    0,
     0
   );
   gl.enableVertexAttribArray(posAttribLocation);
 
-  const boxTextureBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, boxTextureBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array(boxTextureCoords),
-    gl.STATIC_DRAW
-  );
+  gl.bindBuffer(gl.ARRAY_BUFFER, meshes.obj.textureBuffer);
 
   const textureLocation = gl.getAttribLocation(program, "textureCoord");
   gl.vertexAttribPointer(
     textureLocation,
-    2,
+    meshes.obj.textureBuffer.itemSize,
     gl.FLOAT,
     gl.FALSE,
-    2 * Float32Array.BYTES_PER_ELEMENT,
+    0,
     0
   );
   gl.enableVertexAttribArray(textureLocation);
 
-  const img = document.getElementById("img");
+  const img = document.getElementById("main-texture");
   const boxTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, boxTexture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -207,7 +120,7 @@ const Triangle = function () {
 
   const worldMatrix = mat4.create();
   const viewMatrix = mat4.create();
-  mat4.lookAt(viewMatrix, [0, 0, -5], [0, 0, 0], [0, 1, 0]);
+  mat4.lookAt(viewMatrix, [0, 0, -17], [0, 0, 0], [0, 1, 0]);
 
   const projectionMatrix = mat4.create();
   mat4.perspective(
@@ -215,7 +128,7 @@ const Triangle = function () {
     glMatrix.glMatrix.toRadian(60),
     canvas.width / canvas.height,
     1,
-    10
+    100
   );
 
   gl.uniformMatrix4fv(worldMatLoc, gl.FALSE, worldMatrix);
@@ -227,7 +140,7 @@ const Triangle = function () {
 
   const loop = function () {
     angle = (performance.now() / 1000 / 60) * 25 * Math.PI;
-    mat4.rotate(worldMatrix, identityMat, angle, [1, 0, 1]);
+    mat4.rotate(worldMatrix, identityMat, angle, [0.4, 1, 0]);
     gl.uniformMatrix4fv(worldMatLoc, gl.FALSE, worldMatrix);
 
     gl.clearColor(...canvasColor, 1.0);
@@ -236,7 +149,12 @@ const Triangle = function () {
     gl.bindTexture(gl.TEXTURE_2D, boxTexture);
     gl.activeTexture(gl.TEXTURE0);
 
-    gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(
+      gl.TRIANGLES,
+      meshes.obj.indexBuffer.numItems,
+      gl.UNSIGNED_SHORT,
+      0
+    );
     requestAnimationFrame(loop);
   };
 
